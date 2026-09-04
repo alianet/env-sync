@@ -1,0 +1,40 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "title": "env-sync configuration",
+    "description": "Project paths and rules used by the env-sync CLI.",
+    "type": "object",
+    "properties": {
+        "$schema": {
+            "description": "Path or URI of this JSON Schema for editor integration.",
+            "type": "string",
+            "minLength": 1
+        },
+        "template": {
+            "description": "Dotenv template path, relative to the configuration file.",
+            "type": "string",
+            "minLength": 1
+        },
+        "target": {
+            "description": "Dotenv target path, relative to the configuration file.",
+            "type": "string",
+            "minLength": 1
+        },
+        "allowed_extra_keys": {
+            "description": "Exact target-only keys that diff should accept.",
+            "type": "array",
+            "items": {
+                "type": "string",
+                "pattern": "^[A-Za-z_][A-Za-z0-9_.-]*$"
+            }
+        },
+        "allowed_extra_patterns": {
+            "description": "Case-sensitive whole-key globs accepted by diff; * matches any characters and ? matches one character.",
+            "type": "array",
+            "items": {
+                "type": "string",
+                "pattern": "^[A-Za-z0-9_.?*-]+$"
+            }
+        }
+    },
+    "additionalProperties": false
+}

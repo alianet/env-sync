@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+
+set -eu
+
+script_directory=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+project_directory=$(CDPATH= cd -- "${script_directory}/.." && pwd)
+versions_file="${script_directory}/php-versions"
+version=${1:-}
+
+if [ "$#" -ne 1 ] || ! grep -Fxq -- "${version}" "${versions_file}"; then
+    supported_versions=$(awk 'BEGIN { separator = "" } { printf "%s%s", separator, $0; separator = ", " } END { print "" }' "${versions_file}")
+    printf 'Usage: %s <PHP version>\nSupported versions: %s\n' "$0" "${supported_versions}" >&2
+    exit 2
+fi
+
+safe_version=${version//./-}
+run_id="${safe_version}-$$"
+image="env-sync-qa:${run_id}"
+
+cleanup() {
+    docker image rm --force "${image}" >/dev/null 2>&1 || true
+}
+trap cleanup EXIT HUP INT TERM
+
+docker build \
+    --file "${project_directory}/docker/php/Dockerfile" \
+    --target qa \
+    --build-arg "PHP_VERSION=${version}" \
+    --build-arg "QA_RUN_ID=${run_id}" \
+    --tag "${image}" \
+    "${project_directory}"

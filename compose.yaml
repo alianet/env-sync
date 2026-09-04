@@ -1,0 +1,21 @@
+services:
+  php:
+    build:
+      context: .
+      dockerfile: docker/php/Dockerfile
+      target: development
+      args:
+        PHP_VERSION: ${PHP_VERSION:-8.5}
+    working_dir: /app
+    volumes:
+      - .:/app
+      - vendor:/app/vendor
+      - composer-cache:/tmp/composer-cache
+    environment:
+      COMPOSER_CACHE_DIR: /tmp/composer-cache
+
+volumes:
+  vendor:
+    name: env-sync-vendor-${PHP_VERSION:-8.5}
+  composer-cache:
+    name: env-sync-composer-cache
