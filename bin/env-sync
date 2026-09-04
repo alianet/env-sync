@@ -1,0 +1,15 @@
+#!/usr/bin/env php
+<?php
+
+declare(strict_types=1);
+
+use Alianet\EnvSync\Console\ApplicationFactory;
+
+require $GLOBALS['_composer_autoload_path']
+        ?? dirname(__DIR__).'/vendor/autoload.php';
+
+exit(ApplicationFactory::create()->run(
+    array_slice($argv, 1),
+    static fn (string $message): int|false => fwrite(\STDOUT, $message),
+    static fn (string $message): int|false => fwrite(\STDERR, $message),
+));

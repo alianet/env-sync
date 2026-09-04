@@ -1,0 +1,43 @@
+{
+    "name": "alianet/env-sync",
+    "description": "Safe, framework-agnostic CLI synchronization for dotenv files.",
+    "type": "library",
+    "license": "MIT",
+    "require": {
+        "php": "^8.2"
+    },
+    "require-dev": {
+        "friendsofphp/php-cs-fixer": "^3.64",
+        "phpstan/phpstan": "^2.0",
+        "phpunit/phpunit": "^11.5"
+    },
+    "autoload": {
+        "psr-4": {"Alianet\\EnvSync\\": "src/"}
+    },
+    "autoload-dev": {
+        "psr-4": {"Alianet\\EnvSync\\Tests\\": "tests/"}
+    },
+    "bin": ["bin/env-sync"],
+    "scripts": {
+        "test": "phpunit",
+        "test-production-install": "@php tests/Integration/production-install.php",
+        "phpstan": "phpstan analyse --no-progress",
+        "cs-check": "php-cs-fixer fix --dry-run --diff",
+        "cs-fix": "php-cs-fixer fix",
+        "qa": [
+            "composer validate --strict",
+            "@test",
+            "@test-production-install",
+            "@phpstan",
+            "@cs-check"
+        ]
+    },
+    "config": {
+        "platform": {
+            "php": "8.2.0"
+        },
+        "sort-packages": true
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
+}

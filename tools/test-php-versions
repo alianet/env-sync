@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+
+set -u
+
+script_directory=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+results=''
+failed=0
+
+while IFS= read -r version; do
+    [ -n "${version}" ] || continue
+    if "${script_directory}/test-php-version" "${version}"; then
+        result=PASS
+    else
+        result=FAIL
+        failed=1
+    fi
+    results="${results}PHP ${version}: ${result}\n"
+done < "${script_directory}/php-versions"
+
+printf '\n%b' "${results}"
+exit "${failed}"
