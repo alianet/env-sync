@@ -59,7 +59,7 @@ jobs:
       - run: composer install --no-interaction --prefer-dist
       - run: mkdir -p build/coverage
       - run: vendor/bin/phpunit --coverage-text --coverage-clover=build/coverage/clover.xml --coverage-html=build/coverage/html
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: coverage-report
           path: build/coverage
