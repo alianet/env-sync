@@ -6,4 +6,8 @@ namespace Alianet\EnvSync\Document;
 
 final readonly class BlankLine extends Line
 {
+    public function withEnding(string $ending): self
+    {
+        return new self($this->content, $ending);
+    }
 }

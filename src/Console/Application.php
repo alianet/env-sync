@@ -9,15 +9,15 @@ use Alianet\EnvSync\Application\EnvSyncService;
 use Alianet\EnvSync\Application\SyncConfiguration;
 use Alianet\EnvSync\Diff\ComparisonRules;
 use Alianet\EnvSync\Diff\DiffResult;
+use Alianet\EnvSync\Exception\UserFacingException;
 
 final readonly class Application
 {
-    private const VERSION = '0.1.0';
-
     public function __construct(
         private EnvSyncService $service,
         private PathResolver $paths,
         private ConfigurationLoader $configuration,
+        private ConsoleInputParser $inputParser,
     ) {
     }
 
@@ -29,10 +29,10 @@ final readonly class Application
     public function run(array $arguments, callable $stdout, callable $stderr): int
     {
         try {
-            $input = $this->parse($arguments);
+            $input = $this->inputParser->parse($arguments);
 
             if ($input->version) {
-                $stdout('env-sync '.self::VERSION."\n");
+                $stdout('env-sync '.$this->version()."\n");
 
                 return 0;
             }
@@ -60,113 +60,11 @@ final readonly class Application
             return 'diff' === $input->command
                 ? $this->diff($template, $target, $configuration, $input->format, $stdout)
                 : $this->update($template, $target, $input->dryRun, $input->verbose, $stdout);
-        } catch (\Throwable $exception) {
+        } catch (UserFacingException $exception) {
             $stderr($exception->getMessage()."\n");
 
             return 2;
         }
-    }
-
-    /** @param list<string> $arguments */
-    private function parse(array $arguments): ConsoleInput
-    {
-        $positionals = [];
-        $verbose = false;
-        $dryRun = false;
-        $help = false;
-        $version = false;
-        $format = 'text';
-        $configuration = null;
-        $options = true;
-
-        foreach ($arguments as $argument) {
-            if ($options && '--' === $argument) {
-                $options = false;
-                continue;
-            }
-            if ($options && \in_array($argument, ['-v', '--verbose'], true)) {
-                $verbose = true;
-                continue;
-            }
-            if ($options && '--dry-run' === $argument) {
-                $dryRun = true;
-                continue;
-            }
-            if ($options && \in_array($argument, ['-h', '--help'], true)) {
-                $help = true;
-                continue;
-            }
-            if ($options && \in_array($argument, ['-V', '--version'], true)) {
-                $version = true;
-                continue;
-            }
-            if ($options && str_starts_with($argument, '--format=')) {
-                $format = substr($argument, \strlen('--format='));
-                if (!\in_array($format, ['text', 'json'], true)) {
-                    throw new \InvalidArgumentException('Unsupported format. Available formats: text, json.');
-                }
-
-                continue;
-            }
-            if ($options && str_starts_with($argument, '--config=')) {
-                $configuration = substr($argument, \strlen('--config='));
-                if ('' === $configuration) {
-                    throw new \InvalidArgumentException('The --config option requires a path.');
-                }
-
-                continue;
-            }
-            if ($options && str_starts_with($argument, '-')) {
-                throw new \InvalidArgumentException('Unknown option. Run env-sync --help for usage.');
-            }
-            $positionals[] = $argument;
-        }
-
-        if ($version) {
-            return new ConsoleInput(null, null, null, false, false, false, true, 'text', null);
-        }
-        if ([] === $positionals) {
-            if ($dryRun) {
-                throw new \InvalidArgumentException('The --dry-run option requires the update command.');
-            }
-            if ('text' !== $format) {
-                throw new \InvalidArgumentException('The --format option requires the diff command.');
-            }
-            if (null !== $configuration) {
-                throw new \InvalidArgumentException('The --config option requires a command.');
-            }
-
-            return new ConsoleInput(null, null, null, false, $verbose, $help, false, $format, null);
-        }
-
-        $command = array_shift($positionals);
-        if (!\in_array($command, ['diff', 'update', 'validate-config'], true)) {
-            throw new \InvalidArgumentException('Unknown command. Run env-sync --help for usage.');
-        }
-        if ('update' !== $command && $dryRun) {
-            throw new \InvalidArgumentException('The --dry-run option is only available for update.');
-        }
-        if ('diff' !== $command && 'text' !== $format) {
-            throw new \InvalidArgumentException('The --format option is only available for diff.');
-        }
-        if ('validate-config' === $command && [] !== $positionals) {
-            throw new \InvalidArgumentException('The validate-config command does not accept file arguments.');
-        }
-        if (\count($positionals) > 2) {
-            throw new \InvalidArgumentException('Too many arguments. Run env-sync --help for usage.');
-        }
-
-        return new ConsoleInput(
-            $command,
-            $positionals[0] ?? null,
-            $positionals[1] ?? null,
-            $dryRun,
-            $verbose,
-            $help,
-            false,
-            $format,
-            $configuration,
-        );
     }
 
     /** @param callable(string): mixed $output */
@@ -258,8 +156,8 @@ final readonly class Application
 
     private function help(): string
     {
-        return <<<'HELP'
-env-sync 0.1.0
+        return \sprintf(<<<'HELP'
+env-sync %s
 
 Usage:
   env-sync diff [--format=json] [--config=path] [template] [target]
@@ -274,7 +172,22 @@ Options:
   -h, --help      Show help
   -V, --version   Show version
 
-HELP;
+HELP, $this->version());
+    }
+
+    private function version(): string
+    {
+        $path = \dirname(__DIR__, 2).'/VERSION';
+        if (!is_readable($path)) {
+            throw new \RuntimeException('Cannot read application version.');
+        }
+
+        $version = file_get_contents($path);
+        if (false === $version || '' === trim($version)) {
+            throw new \RuntimeException('Cannot read application version.');
+        }
+
+        return trim($version);
     }
 
     private function commandHelp(string $command): string

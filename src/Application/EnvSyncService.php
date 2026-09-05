@@ -11,6 +11,7 @@ use Alianet\EnvSync\Document\Document;
 use Alianet\EnvSync\Document\Parser;
 use Alianet\EnvSync\Document\Updater;
 use Alianet\EnvSync\Document\UpdateResult;
+use Alianet\EnvSync\Exception\FileReadException;
 use Alianet\EnvSync\Filesystem\FileWriter;
 
 final readonly class EnvSyncService
@@ -48,11 +49,11 @@ final readonly class EnvSyncService
     private function readRequired(string $path): Document
     {
         if (!is_file($path) || !is_readable($path)) {
-            throw new \RuntimeException(\sprintf('Cannot read file: %s', $path));
+            throw new FileReadException(\sprintf('Cannot read file: %s', $path));
         }
         $contents = file_get_contents($path);
         if (false === $contents) {
-            throw new \RuntimeException(\sprintf('Cannot read file: %s', $path));
+            throw new FileReadException(\sprintf('Cannot read file: %s', $path));
         }
 
         return $this->parser->parse($contents);

@@ -4,14 +4,37 @@ declare(strict_types=1);
 
 namespace Alianet\EnvSync\Document;
 
+use Alianet\EnvSync\Exception\UpdateException;
+
 final class Updater
 {
     public function update(Document $template, Document $target): UpdateResult
     {
         if ([] !== $template->duplicateKeys() || [] !== $target->duplicateKeys()) {
-            throw new \InvalidArgumentException('Cannot safely update a document containing duplicate keys.');
+            throw new UpdateException('Cannot safely update a document containing duplicate keys.');
         }
 
+        $missing = $this->missingAssignments($template, $target);
+        if ([] === $missing) {
+            return new UpdateResult($target, []);
+        }
+
+        $ending = $target->preferredLineEnding();
+        $lines = $target->lines;
+        [$insertions, $placed] = $this->planSectionInsertions($template, $target, $missing, $ending);
+        $this->planFallbackInsertions($insertions, $missing, $placed, $lines, $ending);
+
+        if (isset($insertions[\count($lines)]) && [] !== $lines && '' === $lines[array_key_last($lines)]->ending) {
+            $lastIndex = array_key_last($lines);
+            $lines[$lastIndex] = $lines[$lastIndex]->withEnding($ending);
+        }
+
+        return new UpdateResult(new Document($this->applyInsertions($lines, $insertions)), array_keys($missing));
+    }
+
+    /** @return array<string, AssignmentLine> */
+    private function missingAssignments(Document $template, Document $target): array
+    {
         $targetAssignments = $target->assignments();
         $missing = [];
         foreach ($template->assignments() as $key => $assignments) {
@@ -19,12 +42,21 @@ final class Updater
                 $missing[$key] = $assignments[0];
             }
         }
-        if ([] === $missing) {
-            return new UpdateResult($target, []);
-        }
 
-        $ending = $target->preferredLineEnding();
-        $lines = $target->lines;
+        return $missing;
+    }
+
+    /**
+     * @param array<string, AssignmentLine> $missing
+     *
+     * @return array{array<int, list<Line>>, array<string, true>}
+     */
+    private function planSectionInsertions(
+        Document $template,
+        Document $target,
+        array $missing,
+        string $ending,
+    ): array {
         $insertions = [];
         $placed = [];
         $targetSections = $target->sections();
@@ -56,6 +88,22 @@ final class Updater
             }
         }
 
+        return [$insertions, $placed];
+    }
+
+    /**
+     * @param array<int, list<Line>>        $insertions
+     * @param array<string, AssignmentLine> $missing
+     * @param array<string, true>           $placed
+     * @param list<Line>                    $lines
+     */
+    private function planFallbackInsertions(
+        array &$insertions,
+        array $missing,
+        array $placed,
+        array $lines,
+        string $ending,
+    ): void {
         $fallback = array_diff_key($missing, $placed);
         if ([] !== $fallback) {
             $insertionIndex = \count($lines);
@@ -67,12 +115,16 @@ final class Updater
                 $insertions[$insertionIndex][] = new AssignmentLine($assignment->content, $ending, $key);
             }
         }
+    }
 
-        if (isset($insertions[\count($lines)]) && [] !== $lines && '' === $lines[array_key_last($lines)]->ending) {
-            $lastIndex = array_key_last($lines);
-            $lines[$lastIndex] = $this->withEnding($lines[$lastIndex], $ending);
-        }
-
+    /**
+     * @param list<Line>             $lines
+     * @param array<int, list<Line>> $insertions
+     *
+     * @return list<Line>
+     */
+    private function applyInsertions(array $lines, array $insertions): array
+    {
         $updated = [];
         for ($index = 0, $count = \count($lines); $index <= $count; ++$index) {
             foreach ($insertions[$index] ?? [] as $line) {
@@ -83,7 +135,7 @@ final class Updater
             }
         }
 
-        return new UpdateResult(new Document($updated), array_keys($missing));
+        return $updated;
     }
 
     /** @param list<Section> $candidates */
@@ -113,14 +165,5 @@ final class Updater
         ));
 
         return 1 === \count($matchingHeadings) ? $matchingHeadings[0] : null;
-    }
-
-    private function withEnding(Line $line, string $ending): Line
-    {
-        return match (true) {
-            $line instanceof AssignmentLine => new AssignmentLine($line->content, $ending, $line->key),
-            $line instanceof CommentLine => new CommentLine($line->content, $ending),
-            default => new BlankLine($line->content, $ending),
-        };
     }
 }

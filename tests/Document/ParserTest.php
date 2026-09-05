@@ -34,6 +34,26 @@ final class ParserTest extends TestCase
         yield 'empty' => ['', []];
     }
 
+    #[DataProvider('quotedValues')]
+    public function testPreservesQuotedValues(string $value): void
+    {
+        $contents = "VALUE={$value}\n";
+
+        $document = (new Parser())->parse($contents);
+
+        self::assertSame($contents, $document->render());
+        self::assertSame(['VALUE'], array_keys($document->assignments()));
+    }
+
+    /** @return iterable<string, array{string}> */
+    public static function quotedValues(): iterable
+    {
+        yield 'escaped double quotes' => ['"say \\"hello\\""'];
+        yield 'escaped single quote' => ["'it\\'s safe'"];
+        yield 'comment after double-quoted value' => ['"value # inside" # outside'];
+        yield 'comment after single-quoted value without whitespace' => ["'value'# outside"];
+    }
+
     public function testBuildsStructuralLineTypes(): void
     {
         $lines = (new Parser())->parse("\n# note\nA=1\n")->lines;

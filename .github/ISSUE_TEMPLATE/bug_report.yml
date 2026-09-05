@@ -1,0 +1,41 @@
+name: Bug report
+description: Report reproducible incorrect behavior in env-sync
+title: "[Bug]: "
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: Do not include dotenv values or other secrets. Report security issues privately according to SECURITY.md.
+  - type: input
+    id: version
+    attributes:
+      label: env-sync version
+      placeholder: 1.0.0
+    validations:
+      required: true
+  - type: input
+    id: php-version
+    attributes:
+      label: PHP version
+      placeholder: 8.2.0
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: Explain what happened and what you expected.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Minimal reproduction
+      description: Use synthetic variable names and values only.
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment details
+      description: Include the operating system and relevant filesystem details.

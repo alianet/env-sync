@@ -320,16 +320,19 @@ final class CliTest extends TestCase
     public function testVersionIsAvailableWithoutLoadingACommand(): void
     {
         [$status, $display] = $this->runCli(['--version' => true]);
+        $version = trim((string) file_get_contents(__DIR__.'/../../VERSION'));
 
         self::assertSame(0, $status);
-        self::assertSame("env-sync 0.1.0\n", $display);
+        self::assertSame("env-sync {$version}\n", $display);
     }
 
     public function testHelpDocumentsTheSupportedCommandsAndOptions(): void
     {
         [$status, $display] = $this->runCli(['--help' => true]);
+        $version = trim((string) file_get_contents(__DIR__.'/../../VERSION'));
 
         self::assertSame(0, $status);
+        self::assertStringStartsWith("env-sync {$version}\n", $display);
         self::assertStringContainsString('env-sync diff [--format=json] [--config=path] [template] [target]', $display);
         self::assertStringContainsString('env-sync update [--dry-run]', $display);
         self::assertStringContainsString('env-sync validate-config [--config=path]', $display);
@@ -344,6 +347,20 @@ final class CliTest extends TestCase
 
         self::assertSame(2, $status);
         self::assertSame("Unknown option. Run env-sync --help for usage.\n", $display);
+    }
+
+    public function testProgrammingErrorsAreNotConvertedToUsageErrors(): void
+    {
+        $this->expectException(\TypeError::class);
+
+        ApplicationFactory::create()->run(
+            ['--version'],
+            static function (string $message): void {
+                throw new \TypeError('simulated programming error');
+            },
+            static function (string $message): void {
+            },
+        );
     }
 
     public function testDryRunIsRejectedForDiff(): void

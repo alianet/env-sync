@@ -17,6 +17,6 @@ final class ApplicationFactory
     {
         $service = new EnvSyncService(new Parser(), new Comparator(), new Updater(), new AtomicFileWriter());
 
-        return new Application($service, new PathResolver(), new ConfigurationLoader());
+        return new Application($service, new PathResolver(), new ConfigurationLoader(), new ConsoleInputParser());
     }
 }

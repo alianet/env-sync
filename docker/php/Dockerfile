@@ -12,6 +12,16 @@ WORKDIR /app
 
 FROM base AS development
 
+ARG USER_ID=1000
+ARG GROUP_ID=1000
+
+RUN groupadd --gid "${GROUP_ID}" env-sync \
+    && useradd --uid "${USER_ID}" --gid "${GROUP_ID}" --create-home env-sync \
+    && mkdir -p /app/vendor /tmp/composer-cache \
+    && chown -R env-sync:env-sync /app /tmp/composer-cache
+
+USER env-sync
+
 CMD ["php", "--version"]
 
 FROM base AS qa

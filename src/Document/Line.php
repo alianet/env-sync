@@ -14,4 +14,6 @@ abstract readonly class Line
     {
         return $this->content.$this->ending;
     }
+
+    abstract public function withEnding(string $ending): self;
 }

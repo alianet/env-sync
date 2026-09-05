@@ -10,4 +10,9 @@ final readonly class AssignmentLine extends Line
     {
         parent::__construct($content, $ending);
     }
+
+    public function withEnding(string $ending): self
+    {
+        return new self($this->content, $ending, $this->key);
+    }
 }

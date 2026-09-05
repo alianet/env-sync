@@ -6,6 +6,11 @@ $packageDirectory = realpath(__DIR__.'/../..');
 if (false === $packageDirectory) {
     throw new RuntimeException('Cannot locate the package directory.');
 }
+$version = file_get_contents($packageDirectory.'/VERSION');
+if (false === $version || '' === trim($version)) {
+    throw new RuntimeException('Cannot read the package version.');
+}
+$version = trim($version);
 
 $fixtureDirectory = sys_get_temp_dir().'/env-sync-consumer-'.bin2hex(random_bytes(8));
 if (!mkdir($fixtureDirectory)) {
@@ -110,7 +115,7 @@ try {
         throw new RuntimeException('A development-only PHPUnit binary was installed.');
     }
     $cliOutput = $runCommand([$fixtureDirectory.'/vendor/bin/env-sync', '--version']);
-    if (!str_contains($cliOutput, 'env-sync')) {
+    if (!str_contains($cliOutput, 'env-sync '.$version)) {
         throw new RuntimeException('The production CLI did not report its version.');
     }
 

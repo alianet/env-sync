@@ -2,6 +2,23 @@
 
 All notable changes to this project will be documented here. The format follows Keep a Changelog, and the project intends to follow Semantic Versioning.
 
+## Release v1.0.1
+
+### Added
+
+- Release validation for version consistency between Git tags, the `VERSION` file, CLI output, and this changelog.
+- CI coverage reporting, lowest-supported dependency checks, dependency update configuration, and community health files.
+
+### Changed
+
+- The CLI version and help output now use the packaged `VERSION` file as their single source of truth.
+- Docker development images now run as the configured host user to avoid bind-mount ownership issues.
+- User-facing CLI failures now use dedicated exception types, while unexpected programming errors are allowed to surface.
+
+### Fixed
+
+- Parsing of escaped quote characters in single-quoted dotenv values.
+
 ## Release v1.0.0
 
 ### Added

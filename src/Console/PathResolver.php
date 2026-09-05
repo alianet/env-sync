@@ -16,16 +16,11 @@ final class PathResolver
     {
         $template ??= $configuration->template;
         if (null === $template) {
-            $template = file_exists(self::ENV_EXAMPLE)
+            $template = file_exists(self::ENV_EXAMPLE) || !file_exists(self::ENV_DIST)
                 ? self::ENV_EXAMPLE
-                : $this->getEnvDistOrExample();
+                : self::ENV_DIST;
         }
 
         return [$template, $target ?? $configuration->target ?? '.env'];
-    }
-
-    public function getEnvDistOrExample(): string
-    {
-        return file_exists(self::ENV_DIST) ? self::ENV_DIST : self::ENV_EXAMPLE;
     }
 }

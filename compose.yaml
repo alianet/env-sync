@@ -6,6 +6,8 @@ services:
       target: development
       args:
         PHP_VERSION: ${PHP_VERSION:-8.5}
+        USER_ID: ${LOCAL_UID:-1000}
+        GROUP_ID: ${LOCAL_GID:-1000}
     working_dir: /app
     volumes:
       - .:/app

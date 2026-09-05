@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Alianet\EnvSync\Tests\Filesystem;
 
+use Alianet\EnvSync\Exception\FileWriteException;
 use Alianet\EnvSync\Filesystem\AtomicFileWriter;
 use PHPUnit\Framework\TestCase;
 
@@ -38,7 +39,7 @@ final class AtomicFileWriterTest extends TestCase
         try {
             (new AtomicFileWriter())->write($link, "SECRET=replacement\n");
             self::fail('Expected the symbolic link to be rejected.');
-        } catch (\RuntimeException $exception) {
+        } catch (FileWriteException $exception) {
             self::assertSame('Refusing to replace symbolic link: '.$link, $exception->getMessage());
         }
 

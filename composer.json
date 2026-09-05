@@ -1,14 +1,33 @@
 {
     "name": "alianet/env-sync",
     "description": "Safe, framework-agnostic CLI synchronization for dotenv files.",
+    "keywords": [
+        "cli",
+        "configuration",
+        "dotenv",
+        "env",
+        "environment",
+        "synchronization"
+    ],
+    "homepage": "https://github.com/alianet/env-sync",
     "type": "library",
     "license": "MIT",
+    "authors": [
+        {
+            "name": "Mariusz Kaczanowski",
+            "email": "m.kaczanowski@alianet.pl"
+        }
+    ],
+    "support": {
+        "issues": "https://github.com/alianet/env-sync/issues",
+        "source": "https://github.com/alianet/env-sync"
+    },
     "require": {
         "php": "^8.2"
     },
     "require-dev": {
         "friendsofphp/php-cs-fixer": "^3.64",
-        "phpstan/phpstan": "^2.0",
+        "phpstan/phpstan": "^2.2",
         "phpunit/phpunit": "^11.5"
     },
     "autoload": {

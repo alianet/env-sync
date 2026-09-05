@@ -14,7 +14,10 @@ final class Parser
             return new Document([]);
         }
 
-        preg_match_all('/.*?(?:\r\n|\n|\r|$)/', $contents, $matches);
+        // Keep line endings in each match so parsing and rendering remain lossless.
+        if (false === preg_match_all('/.*?(?:\r\n|\n|\r|$)/', $contents, $matches)) {
+            throw new \RuntimeException('Could not split document into lines.');
+        }
         $lines = [];
         foreach ($matches[0] as $index => $raw) {
             if ('' === $raw) {
@@ -62,7 +65,7 @@ final class Parser
         $escaped = false;
         $closing = null;
         for ($i = 1, $length = \strlen($value); $i < $length; ++$i) {
-            if ('"' === $quote && '\\' === $value[$i] && !$escaped) {
+            if ('\\' === $value[$i] && !$escaped) {
                 $escaped = true;
                 continue;
             }

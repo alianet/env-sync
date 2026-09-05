@@ -6,6 +6,9 @@ namespace Alianet\EnvSync\Diff;
 
 final readonly class ComparisonRules
 {
+    /** @var list<string> */
+    private array $allowedExtraExpressions;
+
     /**
      * @param list<string> $allowedExtraKeys
      * @param list<string> $allowedExtraPatterns
@@ -14,6 +17,10 @@ final readonly class ComparisonRules
         public array $allowedExtraKeys = [],
         public array $allowedExtraPatterns = [],
     ) {
+        $this->allowedExtraExpressions = array_map(
+            static fn (string $pattern): string => '/^'.str_replace(['\\*', '\\?'], ['.*', '.'], preg_quote($pattern, '/')).'$/D',
+            $allowedExtraPatterns,
+        );
     }
 
     public function allowsExtra(string $key): bool
@@ -22,9 +29,8 @@ final readonly class ComparisonRules
             return true;
         }
 
-        foreach ($this->allowedExtraPatterns as $pattern) {
-            $expression = str_replace(['\\*', '\\?'], ['.*', '.'], preg_quote($pattern, '/'));
-            if (1 === preg_match('/^'.$expression.'$/D', $key)) {
+        foreach ($this->allowedExtraExpressions as $expression) {
+            if (1 === preg_match($expression, $key)) {
                 return true;
             }
         }

@@ -6,6 +6,7 @@ namespace Alianet\EnvSync\Tests\Document;
 
 use Alianet\EnvSync\Document\Parser;
 use Alianet\EnvSync\Document\Updater;
+use Alianet\EnvSync\Exception\UpdateException;
 use PHPUnit\Framework\TestCase;
 
 final class UpdaterTest extends TestCase
@@ -72,7 +73,7 @@ final class UpdaterTest extends TestCase
 
     public function testRefusesAmbiguousDuplicates(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(UpdateException::class);
         $parser = new Parser();
         (new Updater())->update($parser->parse("A=1\n"), $parser->parse("A=1\nA=2\n"));
     }

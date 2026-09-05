@@ -169,10 +169,12 @@ Docker is an optional development environment; local PHP and Composer are not re
 Start with the highest supported PHP version (8.5):
 
 ```bash
-docker compose build php
+LOCAL_UID="$(id -u)" LOCAL_GID="$(id -g)" docker compose build php
 docker compose run --rm php composer install
 docker compose run --rm php composer qa
 ```
+
+The UID and GID build arguments make files created through the bind mount belong to the local user. They default to `1000` when omitted. After changing either value, rebuild the image; if an existing dependency volume has incompatible ownership, stop the project and recreate only that version's `env-sync-vendor-*` volume.
 
 Individual checks remain available:
 
@@ -185,7 +187,7 @@ docker compose run --rm php composer cs-check
 Set `PHP_VERSION` consistently for both build and run to work with another version. Rebuild whenever the selected PHP version or Dockerfile changes:
 
 ```bash
-PHP_VERSION=8.2 docker compose build php
+PHP_VERSION=8.2 LOCAL_UID="$(id -u)" LOCAL_GID="$(id -g)" docker compose build php
 PHP_VERSION=8.2 docker compose run --rm php composer install
 PHP_VERSION=8.2 docker compose run --rm php composer qa
 ```
