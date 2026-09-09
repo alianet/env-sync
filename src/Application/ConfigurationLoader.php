@@ -10,13 +10,19 @@ use Alianet\EnvSync\Exception\InvalidConfigurationException;
 final class ConfigurationLoader
 {
     public const DEFAULT_PATH = '.env-sync.json';
+    private const FIELD_SCHEMA = '$schema';
+    private const FIELD_TEMPLATE = 'template';
+    private const FIELD_TARGET = 'target';
+    private const FIELD_ALLOWED_EXTRA_KEYS = 'allowed_extra_keys';
+    private const FIELD_ALLOWED_EXTRA_PATTERNS = 'allowed_extra_patterns';
+    private const FIELD_REQUIRED_CHANGED_KEYS = 'required_changed_keys';
     private const ALLOWED_FIELDS = [
-        '$schema',
-        'template',
-        'target',
-        'allowed_extra_keys',
-        'allowed_extra_patterns',
-        'required_changed_keys',
+        self::FIELD_SCHEMA,
+        self::FIELD_TEMPLATE,
+        self::FIELD_TARGET,
+        self::FIELD_ALLOWED_EXTRA_KEYS,
+        self::FIELD_ALLOWED_EXTRA_PATTERNS,
+        self::FIELD_REQUIRED_CHANGED_KEYS,
     ];
 
     public function loadRequired(?string $path): SyncConfiguration
@@ -55,18 +61,18 @@ final class ConfigurationLoader
         if ([] !== $unknownFields) {
             throw new InvalidConfigurationException(\sprintf('Unknown configuration field in %s: %s', $path, implode(', ', $unknownFields)));
         }
-        if (\array_key_exists('$schema', $values) && (!\is_string($values['$schema']) || '' === $values['$schema'])) {
-            throw new InvalidConfigurationException(\sprintf('Configuration field "$schema" in %s must be a non-empty string.', $path));
+        if (\array_key_exists(self::FIELD_SCHEMA, $values) && (!\is_string($values[self::FIELD_SCHEMA]) || '' === $values[self::FIELD_SCHEMA])) {
+            throw new InvalidConfigurationException(\sprintf('Configuration field "%s" in %s must be a non-empty string.', self::FIELD_SCHEMA, $path));
         }
 
         $directory = \dirname($path);
 
         return new SyncConfiguration(
-            $this->pathValue($values, 'template', $path, $directory),
-            $this->pathValue($values, 'target', $path, $directory),
+            $this->pathValue($values, self::FIELD_TEMPLATE, $path, $directory),
+            $this->pathValue($values, self::FIELD_TARGET, $path, $directory),
             $this->allowedExtraKeys($values, $path),
             $this->allowedExtraPatterns($values, $path),
-            $this->keys($values, 'required_changed_keys', $path),
+            $this->keys($values, self::FIELD_REQUIRED_CHANGED_KEYS, $path),
         );
     }
 
@@ -90,7 +96,7 @@ final class ConfigurationLoader
      */
     private function allowedExtraKeys(array $values, string $configurationPath): array
     {
-        return $this->keys($values, 'allowed_extra_keys', $configurationPath);
+        return $this->keys($values, self::FIELD_ALLOWED_EXTRA_KEYS, $configurationPath);
     }
 
     /**
@@ -125,17 +131,17 @@ final class ConfigurationLoader
      */
     private function allowedExtraPatterns(array $values, string $configurationPath): array
     {
-        if (!\array_key_exists('allowed_extra_patterns', $values)) {
+        if (!\array_key_exists(self::FIELD_ALLOWED_EXTRA_PATTERNS, $values)) {
             return [];
         }
-        if (!\is_array($values['allowed_extra_patterns']) || !array_is_list($values['allowed_extra_patterns'])) {
-            throw new InvalidConfigurationException(\sprintf('Configuration field "allowed_extra_patterns" in %s must be a JSON array.', $configurationPath));
+        if (!\is_array($values[self::FIELD_ALLOWED_EXTRA_PATTERNS]) || !array_is_list($values[self::FIELD_ALLOWED_EXTRA_PATTERNS])) {
+            throw new InvalidConfigurationException(\sprintf('Configuration field "%s" in %s must be a JSON array.', self::FIELD_ALLOWED_EXTRA_PATTERNS, $configurationPath));
         }
 
         $patterns = [];
-        foreach ($values['allowed_extra_patterns'] as $pattern) {
+        foreach ($values[self::FIELD_ALLOWED_EXTRA_PATTERNS] as $pattern) {
             if (!\is_string($pattern) || 1 !== preg_match('/^[A-Za-z0-9_.?*-]+$/', $pattern)) {
-                throw new InvalidConfigurationException(\sprintf('Configuration field "allowed_extra_patterns" in %s contains an invalid pattern.', $configurationPath));
+                throw new InvalidConfigurationException(\sprintf('Configuration field "%s" in %s contains an invalid pattern.', self::FIELD_ALLOWED_EXTRA_PATTERNS, $configurationPath));
             }
             $patterns[$pattern] = true;
         }
