@@ -2,17 +2,17 @@
 
 declare(strict_types=1);
 
-$packageDirectory = realpath(__DIR__.'/../..');
+$packageDirectory = realpath(__DIR__ . '/../..');
 if (false === $packageDirectory) {
     throw new RuntimeException('Cannot locate the package directory.');
 }
-$version = file_get_contents($packageDirectory.'/VERSION');
+$version = file_get_contents($packageDirectory . '/VERSION');
 if (false === $version || '' === trim($version)) {
     throw new RuntimeException('Cannot read the package version.');
 }
 $version = trim($version);
 
-$fixtureDirectory = sys_get_temp_dir().'/env-sync-consumer-'.bin2hex(random_bytes(8));
+$fixtureDirectory = sys_get_temp_dir() . '/env-sync-consumer-' . bin2hex(random_bytes(8));
 if (!mkdir($fixtureDirectory)) {
     throw new RuntimeException('Cannot create the temporary consumer application.');
 }
@@ -36,7 +36,7 @@ $runComposer = static function (array $arguments) use ($fixtureDirectory): strin
         throw new RuntimeException(sprintf("Composer failed with code %d.\n%s%s", $status, $stdout, $stderr));
     }
 
-    return $stdout.$stderr;
+    return $stdout . $stderr;
 };
 
 /** @param list<string> $command */
@@ -56,7 +56,7 @@ $runCommand = static function (array $command) use ($fixtureDirectory): string {
         throw new RuntimeException(sprintf('Production CLI failed with code %d.', $status));
     }
 
-    return $stdout.$stderr;
+    return $stdout . $stderr;
 };
 
 $removeDirectory = static function (string $directory) use (&$removeDirectory): void {
@@ -92,35 +92,35 @@ try {
         ],
     ];
     file_put_contents(
-        $fixtureDirectory.'/composer.json',
-        json_encode($consumerComposer, \JSON_PRETTY_PRINT | \JSON_UNESCAPED_SLASHES | \JSON_THROW_ON_ERROR)."\n",
+        $fixtureDirectory . '/composer.json',
+        json_encode($consumerComposer, \JSON_PRETTY_PRINT | \JSON_UNESCAPED_SLASHES | \JSON_THROW_ON_ERROR) . "\n",
     );
-    file_put_contents($fixtureDirectory.'/.env.example', "APP_MODE=safe-fixture-default\nCACHE_URL=fixture-cache-default\n");
+    file_put_contents($fixtureDirectory . '/.env.example', "APP_MODE=safe-fixture-default\nCACHE_URL=fixture-cache-default\n");
 
     $firstOutput = $runComposer(['install', '--no-dev', '--no-interaction', '--prefer-dist']);
-    $targetPath = $fixtureDirectory.'/.env';
+    $targetPath = $fixtureDirectory . '/.env';
     if (!is_file($targetPath)) {
         throw new RuntimeException('The first production install did not create .env.');
     }
-    if (!is_file($fixtureDirectory.'/vendor/bin/env-sync')) {
+    if (!is_file($fixtureDirectory . '/vendor/bin/env-sync')) {
         throw new RuntimeException('Composer did not expose vendor/bin/env-sync.');
     }
-    $schemaPath = $fixtureDirectory.'/vendor/alianet/env-sync/env-sync.schema.json';
+    $schemaPath = $fixtureDirectory . '/vendor/alianet/env-sync/env-sync.schema.json';
     $schemaContents = file_get_contents($schemaPath);
     if (false === $schemaContents) {
         throw new RuntimeException('Composer did not install the configuration schema.');
     }
     json_decode($schemaContents, false, flags: \JSON_THROW_ON_ERROR);
-    if (file_exists($fixtureDirectory.'/vendor/bin/phpunit')) {
+    if (file_exists($fixtureDirectory . '/vendor/bin/phpunit')) {
         throw new RuntimeException('A development-only PHPUnit binary was installed.');
     }
-    $cliOutput = $runCommand([$fixtureDirectory.'/vendor/bin/env-sync', '--version']);
-    if (!str_contains($cliOutput, 'env-sync '.$version)) {
+    $cliOutput = $runCommand([$fixtureDirectory . '/vendor/bin/env-sync', '--version']);
+    if (!str_contains($cliOutput, 'env-sync ' . $version)) {
         throw new RuntimeException('The production CLI did not report its version.');
     }
 
     file_put_contents($targetPath, "APP_MODE=deployment-secret-value\nCACHE_URL=kept-existing-value\nEXTRA=kept-extra-value\n");
-    file_put_contents($fixtureDirectory.'/.env.example', "APP_MODE=safe-fixture-default\nCACHE_URL=fixture-cache-default\nNEW_KEY=new-fixture-default\n");
+    file_put_contents($fixtureDirectory . '/.env.example', "APP_MODE=safe-fixture-default\nCACHE_URL=fixture-cache-default\nNEW_KEY=new-fixture-default\n");
     $updateOutput = $runComposer(['update', '--no-dev', '--no-interaction']);
     $afterUpdate = file_get_contents($targetPath);
     if (false === $afterUpdate
@@ -135,7 +135,7 @@ try {
     if ($afterUpdate !== file_get_contents($targetPath)) {
         throw new RuntimeException('A repeated production install was not idempotent.');
     }
-    $combinedOutput = $firstOutput.$cliOutput.$updateOutput.$secondInstallOutput;
+    $combinedOutput = $firstOutput . $cliOutput . $updateOutput . $secondInstallOutput;
     foreach (['deployment-secret-value', 'kept-existing-value', 'kept-extra-value', 'new-fixture-default'] as $value) {
         if (str_contains($combinedOutput, $value)) {
             throw new RuntimeException('Composer Script output disclosed a dotenv value.');

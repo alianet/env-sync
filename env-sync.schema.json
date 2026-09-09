@@ -34,6 +34,14 @@
                 "type": "string",
                 "pattern": "^[A-Za-z0-9_.?*-]+$"
             }
+        },
+        "required_changed_keys": {
+            "description": "Keys whose target values must differ from their template defaults.",
+            "type": "array",
+            "items": {
+                "type": "string",
+                "pattern": "^[A-Za-z_][A-Za-z0-9_.-]*$"
+            }
         }
     },
     "additionalProperties": false

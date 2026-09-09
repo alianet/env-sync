@@ -32,7 +32,7 @@ final readonly class Application
             $input = $this->inputParser->parse($arguments);
 
             if ($input->version) {
-                $stdout('env-sync '.$this->version()."\n");
+                $stdout('env-sync ' . $this->version() . "\n");
 
                 return 0;
             }
@@ -61,7 +61,7 @@ final readonly class Application
                 ? $this->diff($template, $target, $configuration, $input->format, $stdout)
                 : $this->update($template, $target, $input->dryRun, $input->verbose, $stdout);
         } catch (UserFacingException $exception) {
-            $stderr($exception->getMessage()."\n");
+            $stderr($exception->getMessage() . "\n");
 
             return 2;
         }
@@ -78,6 +78,7 @@ final readonly class Application
         $result = $this->service->diff($template, $target, new ComparisonRules(
             $configuration->allowedExtraKeys,
             $configuration->allowedExtraPatterns,
+            $configuration->requiredChangedKeys,
         ));
         if ('json' === $format) {
             $this->renderJsonDiff($output, $result, $template, $target);
@@ -123,12 +124,13 @@ final readonly class Application
             \sprintf('Only in %s:', $target) => ['?', $result->extra],
             \sprintf('Duplicate keys in %s:', $template) => ['!', $result->templateDuplicates],
             \sprintf('Duplicate keys in %s:', $target) => ['!', $result->targetDuplicates],
+            \sprintf('Still using template values in %s:', $target) => ['!', $result->unchangedRequired],
         ];
         foreach ($sections as $heading => [$marker, $keys]) {
             if ([] === $keys) {
                 continue;
             }
-            $output($heading."\n");
+            $output($heading . "\n");
             foreach ($keys as $key) {
                 $output(\sprintf("  %s %s\n", $marker, $key));
             }
@@ -147,11 +149,12 @@ final readonly class Application
             'has_differences' => $result->hasDifferences(),
             'missing' => $result->missing,
             'additional' => $result->extra,
+            'unchanged_required' => $result->unchangedRequired,
             'duplicate_keys' => [
                 'template' => $result->templateDuplicates,
                 'target' => $result->targetDuplicates,
             ],
-        ], \JSON_PRETTY_PRINT | \JSON_UNESCAPED_SLASHES | \JSON_THROW_ON_ERROR)."\n");
+        ], \JSON_PRETTY_PRINT | \JSON_UNESCAPED_SLASHES | \JSON_THROW_ON_ERROR) . "\n");
     }
 
     private function help(): string
@@ -177,7 +180,7 @@ HELP, $this->version());
 
     private function version(): string
     {
-        $path = \dirname(__DIR__, 2).'/VERSION';
+        $path = \dirname(__DIR__, 2) . '/VERSION';
         if (!is_readable($path)) {
             throw new \RuntimeException('Cannot read application version.');
         }

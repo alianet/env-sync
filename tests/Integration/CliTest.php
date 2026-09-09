@@ -20,7 +20,7 @@ final class CliTest extends TestCase
     protected function setUp(): void
     {
         $this->originalDirectory = getcwd() ?: throw new \RuntimeException('Cannot determine working directory.');
-        $this->directory = sys_get_temp_dir().'/env-sync-test-'.bin2hex(random_bytes(8));
+        $this->directory = sys_get_temp_dir() . '/env-sync-test-' . bin2hex(random_bytes(8));
         self::assertTrue(mkdir($this->directory));
         self::assertTrue(chdir($this->directory));
     }
@@ -59,6 +59,7 @@ final class CliTest extends TestCase
             'has_differences' => true,
             'missing' => ['MISSING', 'DUPLICATE'],
             'additional' => ['ADDITIONAL'],
+            'unchanged_required' => [],
             'duplicate_keys' => [
                 'template' => ['DUPLICATE'],
                 'target' => [],
@@ -82,6 +83,7 @@ final class CliTest extends TestCase
             'has_differences' => false,
             'missing' => [],
             'additional' => [],
+            'unchanged_required' => [],
             'duplicate_keys' => [
                 'template' => [],
                 'target' => [],
@@ -172,6 +174,40 @@ final class CliTest extends TestCase
         self::assertStringNotContainsString('private', $display);
     }
 
+    public function testDiffReportsRequiredValuesThatStillMatchTemplateWithoutDisplayingValues(): void
+    {
+        file_put_contents('.env.example', "APP_ADDRESS=http://set-to-your-site\nAPI_TOKEN=replace-me\n");
+        file_put_contents('.env', "APP_ADDRESS=http://set-to-your-site\nAPI_TOKEN=actual-secret\n");
+        file_put_contents('.env-sync.json', json_encode([
+            'required_changed_keys' => ['APP_ADDRESS', 'API_TOKEN'],
+        ], \JSON_THROW_ON_ERROR));
+
+        [$status, $display] = $this->runCli(['command' => 'diff']);
+
+        self::assertSame(1, $status);
+        self::assertStringContainsString('Still using template values in .env:', $display);
+        self::assertStringContainsString('! APP_ADDRESS', $display);
+        self::assertStringNotContainsString('set-to-your-site', $display);
+        self::assertStringNotContainsString('actual-secret', $display);
+    }
+
+    public function testJsonDiffReportsRequiredValuesThatStillMatchTemplate(): void
+    {
+        file_put_contents('.env.example', "APP_ADDRESS=http://set-to-your-site\n");
+        file_put_contents('.env', "APP_ADDRESS=http://set-to-your-site\n");
+        file_put_contents('.env-sync.json', json_encode([
+            'required_changed_keys' => ['APP_ADDRESS'],
+        ], \JSON_THROW_ON_ERROR));
+
+        [$status, $display] = $this->runCli(['command' => 'diff', '--format=json' => true]);
+        $result = json_decode($display, true, flags: \JSON_THROW_ON_ERROR);
+
+        self::assertSame(1, $status);
+        self::assertIsArray($result);
+        self::assertSame(['APP_ADDRESS'], $result['unchanged_required']);
+        self::assertStringNotContainsString('set-to-your-site', $display);
+    }
+
     public function testExplicitConfigurationResolvesPathsRelativeToItsDirectory(): void
     {
         self::assertTrue(mkdir('config'));
@@ -232,6 +268,19 @@ final class CliTest extends TestCase
         self::assertSame(2, $status);
         self::assertSame(
             "Configuration field \"allowed_extra_patterns\" in .env-sync.json contains an invalid pattern.\n",
+            $display,
+        );
+    }
+
+    public function testInvalidRequiredChangedKeyReturnsUsageError(): void
+    {
+        file_put_contents('.env-sync.json', '{"required_changed_keys":["VALID",42]}');
+
+        [$status, $display] = $this->runCli(['command' => 'diff']);
+
+        self::assertSame(2, $status);
+        self::assertSame(
+            "Configuration field \"required_changed_keys\" in .env-sync.json contains an invalid key.\n",
             $display,
         );
     }
@@ -320,7 +369,7 @@ final class CliTest extends TestCase
     public function testVersionIsAvailableWithoutLoadingACommand(): void
     {
         [$status, $display] = $this->runCli(['--version' => true]);
-        $version = trim((string) file_get_contents(__DIR__.'/../../VERSION'));
+        $version = trim((string) file_get_contents(__DIR__ . '/../../VERSION'));
 
         self::assertSame(0, $status);
         self::assertSame("env-sync {$version}\n", $display);
@@ -329,7 +378,7 @@ final class CliTest extends TestCase
     public function testHelpDocumentsTheSupportedCommandsAndOptions(): void
     {
         [$status, $display] = $this->runCli(['--help' => true]);
-        $version = trim((string) file_get_contents(__DIR__.'/../../VERSION'));
+        $version = trim((string) file_get_contents(__DIR__ . '/../../VERSION'));
 
         self::assertSame(0, $status);
         self::assertStringStartsWith("env-sync {$version}\n", $display);
@@ -391,7 +440,7 @@ final class CliTest extends TestCase
         ]);
 
         self::assertSame(0, $status);
-        self::assertFileExists($this->directory.'/.env');
+        self::assertFileExists($this->directory . '/.env');
         self::assertSame(".env updated: 1 variable added.\n", $display);
     }
 
@@ -447,7 +496,7 @@ final class CliTest extends TestCase
             }
         }
         if (isset($arguments['configuration']) && \is_string($arguments['configuration'])) {
-            $cliArguments[] = '--config='.$arguments['configuration'];
+            $cliArguments[] = '--config=' . $arguments['configuration'];
         }
         foreach (['template', 'target'] as $name) {
             if (isset($arguments[$name]) && \is_string($arguments[$name])) {

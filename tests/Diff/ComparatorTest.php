@@ -24,6 +24,18 @@ final class ComparatorTest extends TestCase
         self::assertFalse($this->compare("TOKEN=public-default\n", "TOKEN=top-secret\n")->hasDifferences());
     }
 
+    public function testFindsRequiredValuesThatWereNotChanged(): void
+    {
+        $result = $this->compare(
+            "APP_ADDRESS=http://set-to-your-site\nTOKEN=replace-me\nOPTIONAL=default\n",
+            "APP_ADDRESS=\"http://set-to-your-site\" # forgotten\nTOKEN=changed\nOPTIONAL=default\n",
+            new ComparisonRules(requiredChangedKeys: ['APP_ADDRESS', 'TOKEN']),
+        );
+
+        self::assertSame(['APP_ADDRESS'], $result->unchangedRequired);
+        self::assertTrue($result->hasDifferences());
+    }
+
     public function testAllowedExtraKeysAreNotReportedAsDifferences(): void
     {
         $result = $this->compare(

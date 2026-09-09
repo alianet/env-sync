@@ -86,7 +86,7 @@ final class ParserTest extends TestCase
     public function testRejectsUnsupportedUnquotedValues(string $value, string $reason): void
     {
         $this->expectException(ParseException::class);
-        $this->expectExceptionMessage('Line 2: '.$reason);
+        $this->expectExceptionMessage('Line 2: ' . $reason);
 
         (new Parser())->parse("OK=yes\nBROKEN={$value}\n");
     }

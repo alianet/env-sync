@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented here. The format follows Keep a Changelog, and the project intends to follow Semantic Versioning.
 
+## Unreleased
+
+### Added
+
+- Configurable `required_changed_keys` checks for placeholder values that must differ between the template and target dotenv files.
+
 ## Release v1.0.1
 
 ### Added

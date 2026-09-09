@@ -14,7 +14,7 @@ final class AtomicFileWriterTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->directory = sys_get_temp_dir().'/env-sync-writer-test-'.bin2hex(random_bytes(8));
+        $this->directory = sys_get_temp_dir() . '/env-sync-writer-test-' . bin2hex(random_bytes(8));
         self::assertTrue(mkdir($this->directory));
     }
 
@@ -31,8 +31,8 @@ final class AtomicFileWriterTest extends TestCase
 
     public function testRejectsSymbolicLinkWithoutChangingItOrItsTarget(): void
     {
-        $target = $this->directory.'/actual.env';
-        $link = $this->directory.'/.env';
+        $target = $this->directory . '/actual.env';
+        $link = $this->directory . '/.env';
         self::assertNotFalse(file_put_contents($target, "SECRET=original\n"));
         self::assertTrue(symlink($target, $link));
 
@@ -40,7 +40,7 @@ final class AtomicFileWriterTest extends TestCase
             (new AtomicFileWriter())->write($link, "SECRET=replacement\n");
             self::fail('Expected the symbolic link to be rejected.');
         } catch (FileWriteException $exception) {
-            self::assertSame('Refusing to replace symbolic link: '.$link, $exception->getMessage());
+            self::assertSame('Refusing to replace symbolic link: ' . $link, $exception->getMessage());
         }
 
         self::assertTrue(is_link($link));

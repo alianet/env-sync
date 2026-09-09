@@ -10,7 +10,14 @@ use Alianet\EnvSync\Exception\InvalidConfigurationException;
 final class ConfigurationLoader
 {
     public const DEFAULT_PATH = '.env-sync.json';
-    private const ALLOWED_FIELDS = ['$schema', 'template', 'target', 'allowed_extra_keys', 'allowed_extra_patterns'];
+    private const ALLOWED_FIELDS = [
+        '$schema',
+        'template',
+        'target',
+        'allowed_extra_keys',
+        'allowed_extra_patterns',
+        'required_changed_keys',
+    ];
 
     public function loadRequired(?string $path): SyncConfiguration
     {
@@ -59,6 +66,7 @@ final class ConfigurationLoader
             $this->pathValue($values, 'target', $path, $directory),
             $this->allowedExtraKeys($values, $path),
             $this->allowedExtraPatterns($values, $path),
+            $this->keys($values, 'required_changed_keys', $path),
         );
     }
 
@@ -82,17 +90,27 @@ final class ConfigurationLoader
      */
     private function allowedExtraKeys(array $values, string $configurationPath): array
     {
-        if (!\array_key_exists('allowed_extra_keys', $values)) {
+        return $this->keys($values, 'allowed_extra_keys', $configurationPath);
+    }
+
+    /**
+     * @param array<string, mixed> $values
+     *
+     * @return list<string>
+     */
+    private function keys(array $values, string $field, string $configurationPath): array
+    {
+        if (!\array_key_exists($field, $values)) {
             return [];
         }
-        if (!\is_array($values['allowed_extra_keys']) || !array_is_list($values['allowed_extra_keys'])) {
-            throw new InvalidConfigurationException(\sprintf('Configuration field "allowed_extra_keys" in %s must be a JSON array.', $configurationPath));
+        if (!\is_array($values[$field]) || !array_is_list($values[$field])) {
+            throw new InvalidConfigurationException(\sprintf('Configuration field "%s" in %s must be a JSON array.', $field, $configurationPath));
         }
 
         $keys = [];
-        foreach ($values['allowed_extra_keys'] as $key) {
+        foreach ($values[$field] as $key) {
             if (!\is_string($key) || 1 !== preg_match('/^[A-Za-z_][A-Za-z0-9_.-]*$/', $key)) {
-                throw new InvalidConfigurationException(\sprintf('Configuration field "allowed_extra_keys" in %s contains an invalid key.', $configurationPath));
+                throw new InvalidConfigurationException(\sprintf('Configuration field "%s" in %s contains an invalid key.', $field, $configurationPath));
             }
             $keys[$key] = true;
         }
@@ -131,7 +149,7 @@ final class ConfigurationLoader
             return $path;
         }
 
-        return $directory.\DIRECTORY_SEPARATOR.$path;
+        return $directory . \DIRECTORY_SEPARATOR . $path;
     }
 
     private function isAbsolutePath(string $path): bool

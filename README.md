@@ -1,6 +1,6 @@
 # env-sync
 
-`alianet/env-sync` is a framework-independent CLI that compares a local `.env` file with a versioned template and safely appends missing entries. It compares variable names, never their values, so configuration drift can be detected without printing secrets.
+`alianet/env-sync` is a framework-independent CLI that compares a local `.env` file with a versioned template and safely appends missing entries. It compares variable names and can verify that selected placeholder values were changed, without ever printing dotenv values.
 
 ## Installation
 
@@ -43,11 +43,14 @@ Project defaults and accepted local-only keys can be stored in an optional `.env
     "template": ".env.dist",
     "target": ".env.local",
     "allowed_extra_keys": ["APP_DEBUG", "LOCAL_PROXY_URL"],
-    "allowed_extra_patterns": ["DEV_*", "CACHE_?"]
+    "allowed_extra_patterns": ["DEV_*", "CACHE_?"],
+    "required_changed_keys": ["APP_ADDRESS"]
 }
 ```
 
-Relative paths in the configuration are resolved from the directory containing that file. Explicit command-line paths override configured paths. Use `--config=path/to/env-sync.json` to select another configuration file. Additional target keys listed in `allowed_extra_keys` or matching `allowed_extra_patterns` are ignored by `diff`; duplicate keys are still reported. Patterns are case-sensitive, match the complete key, and support `*` for any number of characters and `?` for one character. The configuration contains paths and variable names only, never dotenv values.
+Relative paths in the configuration are resolved from the directory containing that file. Explicit command-line paths override configured paths. Use `--config=path/to/env-sync.json` to select another configuration file. Additional target keys listed in `allowed_extra_keys` or matching `allowed_extra_patterns` are ignored by `diff`; duplicate keys are still reported. Patterns are case-sensitive, match the complete key, and support `*` for any number of characters and `?` for one character.
+
+Keys listed in `required_changed_keys` must have a target value different from the template value. This catches forgotten placeholders such as `APP_ADDRESS=http://set-to-your-site`. Quoting and trailing comments do not count as a value change. A matching value makes `diff` return exit code `1`; reports contain only the key name, never either value. The configuration itself contains paths and variable names only.
 
 `validate-config` checks the configuration structure and rules without reading either dotenv file. Unlike `diff` and `update`, it requires `.env-sync.json` or the file selected with `--config` to exist. This makes it suitable for a fast CI check and editor-independent validation.
 
@@ -64,6 +67,7 @@ Use `diff --format=json` for machine-readable output in CI and other tools. The 
     "has_differences": true,
     "missing": ["CACHE_URL"],
     "additional": ["LOCAL_ONLY"],
+    "unchanged_required": ["APP_ADDRESS"],
     "duplicate_keys": {
         "template": [],
         "target": []
@@ -76,7 +80,7 @@ Use `diff --format=json` for machine-readable output in CI and other tools. The 
 | Code | Meaning |
 | ---: | --- |
 | `0` | Files have the same key set, or update completed/no change was needed |
-| `1` | `diff` detected missing, additional, or duplicate keys |
+| `1` | `diff` detected missing, additional, duplicate, or required-but-unchanged keys |
 | `2` | Invalid usage, unreadable input, unsafe syntax, or write failure |
 
 ## Safety

@@ -44,21 +44,19 @@ final class Parser
             throw new ParseException($number, 'unsupported syntax; expected a comment, blank line, or KEY=value assignment');
         }
 
-        $this->validateValue($match[2], $number);
+        $value = $this->parseValue($match[2], $number);
 
-        return new AssignmentLine($content, $ending, $match[1]);
+        return new AssignmentLine($content, $ending, $match[1], $value);
     }
 
-    private function validateValue(string $value, int $number): void
+    private function parseValue(string $value, int $number): string
     {
         if ('' === $value) {
-            return;
+            return '';
         }
 
         if (!\in_array($value[0], ["'", '"'], true)) {
-            $this->validateUnquotedValue($value, $number);
-
-            return;
+            return $this->parseUnquotedValue($value, $number);
         }
 
         $quote = $value[0];
@@ -82,9 +80,11 @@ final class Parser
         if (1 !== preg_match('/^\s*(?:#.*)?$/', $trailing)) {
             throw new ParseException($number, 'unexpected content after quoted value');
         }
+
+        return substr($value, 1, $closing - 1);
     }
 
-    private function validateUnquotedValue(string $value, int $number): void
+    private function parseUnquotedValue(string $value, int $number): string
     {
         $unquotedValue = rtrim($value, " \t");
         if (str_starts_with($value, '#')) {
@@ -102,5 +102,7 @@ final class Parser
         if (1 !== preg_match('/^(?:#.*|\S+(?:[ \t]+(?:#.*)?)?)$/', $value)) {
             throw new ParseException($number, 'whitespace in an unquoted value is not supported');
         }
+
+        return $unquotedValue;
     }
 }

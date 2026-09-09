@@ -83,7 +83,12 @@ final class Updater
                         break;
                     }
                 }
-                $insertions[$insertionIndex][] = new AssignmentLine($sectionMissing[$key]->content, $ending, $key);
+                $insertions[$insertionIndex][] = new AssignmentLine(
+                    $sectionMissing[$key]->content,
+                    $ending,
+                    $key,
+                    $sectionMissing[$key]->value,
+                );
                 $placed[$key] = true;
             }
         }
@@ -112,7 +117,7 @@ final class Updater
             }
             $insertions[$insertionIndex][] = new CommentLine('# Added by env-sync', $ending);
             foreach ($fallback as $key => $assignment) {
-                $insertions[$insertionIndex][] = new AssignmentLine($assignment->content, $ending, $key);
+                $insertions[$insertionIndex][] = new AssignmentLine($assignment->content, $ending, $key, $assignment->value);
             }
         }
     }

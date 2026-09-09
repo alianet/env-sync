@@ -12,13 +12,15 @@ final readonly class ComparisonRules
     /**
      * @param list<string> $allowedExtraKeys
      * @param list<string> $allowedExtraPatterns
+     * @param list<string> $requiredChangedKeys
      */
     public function __construct(
         public array $allowedExtraKeys = [],
         public array $allowedExtraPatterns = [],
+        public array $requiredChangedKeys = [],
     ) {
         $this->allowedExtraExpressions = array_map(
-            static fn (string $pattern): string => '/^'.str_replace(['\\*', '\\?'], ['.*', '.'], preg_quote($pattern, '/')).'$/D',
+            static fn (string $pattern): string => '/^' . str_replace(['\\*', '\\?'], ['.*', '.'], preg_quote($pattern, '/')) . '$/D',
             $allowedExtraPatterns,
         );
     }

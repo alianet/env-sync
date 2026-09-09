@@ -12,7 +12,7 @@ abstract readonly class Line
 
     final public function render(): string
     {
-        return $this->content.$this->ending;
+        return $this->content . $this->ending;
     }
 
     abstract public function withEnding(string $ending): self;
