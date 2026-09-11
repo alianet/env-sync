@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented here. The format follows Keep a Changelog, and the project intends to follow Semantic Versioning.
 
-## Unreleased
+## Release v1.2.0
 
 ### Added
 
