@@ -79,6 +79,7 @@ final readonly class Application
             $configuration->allowedExtraKeys,
             $configuration->allowedExtraPatterns,
             $configuration->requiredChangedKeys,
+            $configuration->conditionalRequirements,
         ));
         if ('json' === $format) {
             $this->renderJsonDiff($output, $result, $template, $target);
@@ -125,6 +126,7 @@ final readonly class Application
             \sprintf('Duplicate keys in %s:', $template) => ['!', $result->templateDuplicates],
             \sprintf('Duplicate keys in %s:', $target) => ['!', $result->targetDuplicates],
             \sprintf('Still using template values in %s:', $target) => ['!', $result->unchangedRequired],
+            \sprintf('Values not covered by conditional requirements in %s:', $target) => ['!', $result->unmatchedConditionKeys],
         ];
         foreach ($sections as $heading => [$marker, $keys]) {
             if ([] === $keys) {
@@ -136,7 +138,7 @@ final readonly class Application
             }
         }
         if (!$result->hasDifferences()) {
-            $output("Files contain the same keys.\n");
+            $output("No differences found.\n");
         }
     }
 
@@ -150,6 +152,7 @@ final readonly class Application
             'missing' => $result->missing,
             'additional' => $result->extra,
             'unchanged_required' => $result->unchangedRequired,
+            'unmatched_condition_keys' => $result->unmatchedConditionKeys,
             'duplicate_keys' => [
                 'template' => $result->templateDuplicates,
                 'target' => $result->targetDuplicates,

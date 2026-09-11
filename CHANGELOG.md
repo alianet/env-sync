@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented here. The format follows Keep a Changelog, and the project intends to follow Semantic Versioning.
 
+## Unreleased
+
+### Added
+
+- Conditional required-key and changed-placeholder checks selected by target dotenv values.
+
 ## Release v1.1.0
 
 ### Added

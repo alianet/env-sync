@@ -44,13 +44,29 @@ Project defaults and accepted local-only keys can be stored in an optional `.env
     "target": ".env.local",
     "allowed_extra_keys": ["APP_DEBUG", "LOCAL_PROXY_URL"],
     "allowed_extra_patterns": ["DEV_*", "CACHE_?"],
-    "required_changed_keys": ["APP_ADDRESS"]
+    "required_changed_keys": ["APP_ADDRESS"],
+    "conditional_requirements": [
+        {
+            "key": "STORAGE_DRIVER",
+            "equals": "local",
+            "required_keys": ["STORAGE_PATH"],
+            "required_changed_keys": []
+        },
+        {
+            "key": "STORAGE_DRIVER",
+            "equals": "remote",
+            "required_keys": ["STORAGE_ENDPOINT", "STORAGE_ACCESS_KEY", "STORAGE_SECRET_KEY"],
+            "required_changed_keys": ["STORAGE_ACCESS_KEY", "STORAGE_SECRET_KEY"]
+        }
+    ]
 }
 ```
 
 Relative paths in the configuration are resolved from the directory containing that file. Explicit command-line paths override configured paths. Use `--config=path/to/env-sync.json` to select another configuration file. Additional target keys listed in `allowed_extra_keys` or matching `allowed_extra_patterns` are ignored by `diff`; duplicate keys are still reported. Patterns are case-sensitive, match the complete key, and support `*` for any number of characters and `?` for one character.
 
-Keys listed in `required_changed_keys` must have a target value different from the template value. This catches forgotten placeholders such as `APP_ADDRESS=http://set-to-your-site`. Quoting and trailing comments do not count as a value change. A matching value makes `diff` return exit code `1`; reports contain only the key name, never either value. The configuration itself contains paths and variable names only.
+Keys listed in `required_changed_keys` must have a target value different from the template value. This catches forgotten placeholders such as `APP_ADDRESS=http://set-to-your-site`. Quoting and trailing comments do not count as a value change. A matching value makes `diff` return exit code `1`; reports contain only the key name, never either value.
+
+Each entry in `conditional_requirements` is activated when the target value of `key` exactly matches `equals`. `required_keys` controls presence, while `required_changed_keys` independently checks that existing values differ from the template. Any key mentioned in either list becomes conditional and is not required while another branch is active. When the selector value matches no configured branch, `diff` reports only the selector key and returns exit code `1`. Selector values should be non-secret because `.env-sync.json` is normally versioned.
 
 `validate-config` checks the configuration structure and rules without reading either dotenv file. Unlike `diff` and `update`, it requires `.env-sync.json` or the file selected with `--config` to exist. This makes it suitable for a fast CI check and editor-independent validation.
 
@@ -68,6 +84,7 @@ Use `diff --format=json` for machine-readable output in CI and other tools. The 
     "missing": ["CACHE_URL"],
     "additional": ["LOCAL_ONLY"],
     "unchanged_required": ["APP_ADDRESS"],
+    "unmatched_condition_keys": [],
     "duplicate_keys": {
         "template": [],
         "target": []

@@ -6,6 +6,7 @@ namespace Alianet\EnvSync\Tests\Diff;
 
 use Alianet\EnvSync\Diff\Comparator;
 use Alianet\EnvSync\Diff\ComparisonRules;
+use Alianet\EnvSync\Diff\ConditionalRequirement;
 use Alianet\EnvSync\Document\Parser;
 use PHPUnit\Framework\TestCase;
 
@@ -65,6 +66,63 @@ final class ComparatorTest extends TestCase
 
         self::assertSame(['A'], $result->templateDuplicates);
         self::assertSame(['B'], $result->targetDuplicates);
+    }
+
+    public function testAppliesOnlyRequirementsForTheMatchingCondition(): void
+    {
+        $rules = new ComparisonRules(conditionalRequirements: [
+            new ConditionalRequirement(
+                'ATLASSIAN_ACCOUNT_TYPE',
+                'individual',
+                ['ATLASSIAN_EMAIL', 'ATLASSIAN_API_TOKEN'],
+                ['ATLASSIAN_API_TOKEN'],
+            ),
+            new ConditionalRequirement(
+                'ATLASSIAN_ACCOUNT_TYPE',
+                'company',
+                ['ATLASSIAN_CLIENT_ID', 'ATLASSIAN_CLIENT_SECRET', 'ATLASSIAN_REDIRECT_URI', 'SESSION_ENCRYPTION_KEY'],
+                ['ATLASSIAN_CLIENT_ID', 'ATLASSIAN_CLIENT_SECRET', 'SESSION_ENCRYPTION_KEY'],
+            ),
+        ]);
+        $template = <<<'DOTENV'
+ATLASSIAN_ACCOUNT_TYPE=individual
+ATLASSIAN_EMAIL=your-email
+ATLASSIAN_API_TOKEN=replace-me
+ATLASSIAN_CLIENT_ID=replace-me
+ATLASSIAN_CLIENT_SECRET=replace-me
+ATLASSIAN_REDIRECT_URI=http://localhost/callback
+SESSION_ENCRYPTION_KEY=replace-me
+DOTENV;
+        $target = <<<'DOTENV'
+ATLASSIAN_ACCOUNT_TYPE=company
+ATLASSIAN_CLIENT_ID=actual-id
+ATLASSIAN_CLIENT_SECRET=replace-me
+ATLASSIAN_REDIRECT_URI=http://localhost/callback
+DOTENV;
+
+        $result = $this->compare($template, $target, $rules);
+
+        self::assertSame(['SESSION_ENCRYPTION_KEY'], $result->missing);
+        self::assertSame(['ATLASSIAN_CLIENT_SECRET'], $result->unchangedRequired);
+        self::assertSame([], $result->unmatchedConditionKeys);
+    }
+
+    public function testReportsConditionKeyWhenNoBranchMatches(): void
+    {
+        $rules = new ComparisonRules(conditionalRequirements: [
+            new ConditionalRequirement('ACCOUNT_TYPE', 'individual', ['EMAIL']),
+            new ConditionalRequirement('ACCOUNT_TYPE', 'company', ['CLIENT_ID']),
+        ]);
+
+        $result = $this->compare(
+            "ACCOUNT_TYPE=unsupported\nEMAIL=placeholder\nCLIENT_ID=placeholder\n",
+            "ACCOUNT_TYPE=secret-unsupported-value\n",
+            $rules,
+        );
+
+        self::assertSame([], $result->missing);
+        self::assertSame(['ACCOUNT_TYPE'], $result->unmatchedConditionKeys);
+        self::assertTrue($result->hasDifferences());
     }
 
     private function compare(

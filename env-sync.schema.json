@@ -42,6 +42,42 @@
                 "type": "string",
                 "pattern": "^[A-Za-z_][A-Za-z0-9_.-]*$"
             }
+        },
+        "conditional_requirements": {
+            "description": "Requirements activated when a target dotenv key has an exact value. Keys used by any branch are optional outside matching branches.",
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "key": {
+                        "description": "Target dotenv key selecting the branch.",
+                        "type": "string",
+                        "pattern": "^[A-Za-z_][A-Za-z0-9_.-]*$"
+                    },
+                    "equals": {
+                        "description": "Exact non-secret selector value activating the branch.",
+                        "type": "string"
+                    },
+                    "required_keys": {
+                        "description": "Keys required in the target while this branch is active.",
+                        "type": "array",
+                        "items": {
+                            "type": "string",
+                            "pattern": "^[A-Za-z_][A-Za-z0-9_.-]*$"
+                        }
+                    },
+                    "required_changed_keys": {
+                        "description": "Keys whose target values must differ from the template while this branch is active.",
+                        "type": "array",
+                        "items": {
+                            "type": "string",
+                            "pattern": "^[A-Za-z_][A-Za-z0-9_.-]*$"
+                        }
+                    }
+                },
+                "required": ["key", "equals"],
+                "additionalProperties": false
+            }
         }
     },
     "additionalProperties": false

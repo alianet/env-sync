@@ -12,6 +12,7 @@ final readonly class DiffResult
      * @param list<string> $templateDuplicates
      * @param list<string> $targetDuplicates
      * @param list<string> $unchangedRequired
+     * @param list<string> $unmatchedConditionKeys
      */
     public function __construct(
         public array $missing,
@@ -19,6 +20,7 @@ final readonly class DiffResult
         public array $templateDuplicates,
         public array $targetDuplicates,
         public array $unchangedRequired,
+        public array $unmatchedConditionKeys = [],
     ) {
     }
 
@@ -28,6 +30,7 @@ final readonly class DiffResult
             || [] !== $this->extra
             || [] !== $this->templateDuplicates
             || [] !== $this->targetDuplicates
-            || [] !== $this->unchangedRequired;
+            || [] !== $this->unchangedRequired
+            || [] !== $this->unmatchedConditionKeys;
     }
 }

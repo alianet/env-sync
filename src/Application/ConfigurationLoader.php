@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Alianet\EnvSync\Application;
 
+use Alianet\EnvSync\Diff\ConditionalRequirement;
 use Alianet\EnvSync\Exception\ConfigurationFileReadException;
 use Alianet\EnvSync\Exception\InvalidConfigurationException;
 
@@ -16,6 +17,10 @@ final class ConfigurationLoader
     private const FIELD_ALLOWED_EXTRA_KEYS = 'allowed_extra_keys';
     private const FIELD_ALLOWED_EXTRA_PATTERNS = 'allowed_extra_patterns';
     private const FIELD_REQUIRED_CHANGED_KEYS = 'required_changed_keys';
+    private const FIELD_CONDITIONAL_REQUIREMENTS = 'conditional_requirements';
+    private const FIELD_KEY = 'key';
+    private const FIELD_EQUALS = 'equals';
+    private const FIELD_REQUIRED_KEYS = 'required_keys';
     private const ALLOWED_FIELDS = [
         self::FIELD_SCHEMA,
         self::FIELD_TEMPLATE,
@@ -23,6 +28,7 @@ final class ConfigurationLoader
         self::FIELD_ALLOWED_EXTRA_KEYS,
         self::FIELD_ALLOWED_EXTRA_PATTERNS,
         self::FIELD_REQUIRED_CHANGED_KEYS,
+        self::FIELD_CONDITIONAL_REQUIREMENTS,
     ];
 
     public function loadRequired(?string $path): SyncConfiguration
@@ -73,6 +79,7 @@ final class ConfigurationLoader
             $this->allowedExtraKeys($values, $path),
             $this->allowedExtraPatterns($values, $path),
             $this->keys($values, self::FIELD_REQUIRED_CHANGED_KEYS, $path),
+            $this->conditionalRequirements($values, $path),
         );
     }
 
@@ -147,6 +154,51 @@ final class ConfigurationLoader
         }
 
         return array_keys($patterns);
+    }
+
+    /**
+     * @param array<string, mixed> $values
+     *
+     * @return list<ConditionalRequirement>
+     */
+    private function conditionalRequirements(array $values, string $configurationPath): array
+    {
+        if (!\array_key_exists(self::FIELD_CONDITIONAL_REQUIREMENTS, $values)) {
+            return [];
+        }
+        $rules = $values[self::FIELD_CONDITIONAL_REQUIREMENTS];
+        if (!\is_array($rules) || !array_is_list($rules)) {
+            throw new InvalidConfigurationException(\sprintf('Configuration field "%s" in %s must be a JSON array.', self::FIELD_CONDITIONAL_REQUIREMENTS, $configurationPath));
+        }
+
+        $requirements = [];
+        foreach ($rules as $rule) {
+            if (!$rule instanceof \stdClass) {
+                throw new InvalidConfigurationException(\sprintf('Configuration field "%s" in %s must contain JSON objects.', self::FIELD_CONDITIONAL_REQUIREMENTS, $configurationPath));
+            }
+
+            /** @var array<string, mixed> $ruleValues */
+            $ruleValues = get_object_vars($rule);
+            $unknownFields = array_diff(array_keys($ruleValues), [self::FIELD_KEY, self::FIELD_EQUALS, self::FIELD_REQUIRED_KEYS, self::FIELD_REQUIRED_CHANGED_KEYS]);
+            if ([] !== $unknownFields) {
+                throw new InvalidConfigurationException(\sprintf('Unknown conditional requirement field in %s: %s', $configurationPath, implode(', ', $unknownFields)));
+            }
+            if (!isset($ruleValues[self::FIELD_KEY]) || !\is_string($ruleValues[self::FIELD_KEY]) || 1 !== preg_match('/^[A-Za-z_][A-Za-z0-9_.-]*$/', $ruleValues[self::FIELD_KEY])) {
+                throw new InvalidConfigurationException(\sprintf('Conditional requirement in %s must contain a valid "key".', $configurationPath));
+            }
+            if (!\array_key_exists(self::FIELD_EQUALS, $ruleValues) || !\is_string($ruleValues[self::FIELD_EQUALS])) {
+                throw new InvalidConfigurationException(\sprintf('Conditional requirement for key "%s" in %s must contain a string "equals".', $ruleValues[self::FIELD_KEY], $configurationPath));
+            }
+
+            $requirements[] = new ConditionalRequirement(
+                $ruleValues[self::FIELD_KEY],
+                $ruleValues[self::FIELD_EQUALS],
+                $this->keys($ruleValues, self::FIELD_REQUIRED_KEYS, $configurationPath),
+                $this->keys($ruleValues, self::FIELD_REQUIRED_CHANGED_KEYS, $configurationPath),
+            );
+        }
+
+        return $requirements;
     }
 
     private function resolvePath(string $path, string $directory): string

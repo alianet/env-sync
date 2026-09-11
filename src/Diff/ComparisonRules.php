@@ -10,14 +10,16 @@ final readonly class ComparisonRules
     private array $allowedExtraExpressions;
 
     /**
-     * @param list<string> $allowedExtraKeys
-     * @param list<string> $allowedExtraPatterns
-     * @param list<string> $requiredChangedKeys
+     * @param list<string>                 $allowedExtraKeys
+     * @param list<string>                 $allowedExtraPatterns
+     * @param list<string>                 $requiredChangedKeys
+     * @param list<ConditionalRequirement> $conditionalRequirements
      */
     public function __construct(
         public array $allowedExtraKeys = [],
         public array $allowedExtraPatterns = [],
         public array $requiredChangedKeys = [],
+        public array $conditionalRequirements = [],
     ) {
         $this->allowedExtraExpressions = array_map(
             static fn (string $pattern): string => '/^' . str_replace(['\\*', '\\?'], ['.*', '.'], preg_quote($pattern, '/')) . '$/D',
@@ -38,5 +40,18 @@ final readonly class ComparisonRules
         }
 
         return false;
+    }
+
+    /** @return list<string> */
+    public function conditionalKeys(): array
+    {
+        $keys = [];
+        foreach ($this->conditionalRequirements as $requirement) {
+            foreach (array_merge($requirement->requiredKeys, $requirement->requiredChangedKeys) as $key) {
+                $keys[$key] = true;
+            }
+        }
+
+        return array_keys($keys);
     }
 }

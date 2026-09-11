@@ -60,6 +60,7 @@ final class CliTest extends TestCase
             'missing' => ['MISSING', 'DUPLICATE'],
             'additional' => ['ADDITIONAL'],
             'unchanged_required' => [],
+            'unmatched_condition_keys' => [],
             'duplicate_keys' => [
                 'template' => ['DUPLICATE'],
                 'target' => [],
@@ -84,6 +85,7 @@ final class CliTest extends TestCase
             'missing' => [],
             'additional' => [],
             'unchanged_required' => [],
+            'unmatched_condition_keys' => [],
             'duplicate_keys' => [
                 'template' => [],
                 'target' => [],
@@ -170,7 +172,7 @@ final class CliTest extends TestCase
         [$status, $display] = $this->runCli(['command' => 'diff']);
 
         self::assertSame(0, $status);
-        self::assertSame("Files contain the same keys.\n", $display);
+        self::assertSame("No differences found.\n", $display);
         self::assertStringNotContainsString('private', $display);
     }
 
@@ -208,6 +210,38 @@ final class CliTest extends TestCase
         self::assertStringNotContainsString('set-to-your-site', $display);
     }
 
+    public function testConditionalRequirementsDoNotDisplaySelectorOrSecretValues(): void
+    {
+        file_put_contents('.env.example', "ACCOUNT_TYPE=individual\nEMAIL=your-email\nAPI_TOKEN=replace-me\nCLIENT_SECRET=replace-me\n");
+        file_put_contents('.env', "ACCOUNT_TYPE=company\nCLIENT_SECRET=replace-me\n");
+        file_put_contents('.env-sync.json', json_encode([
+            'conditional_requirements' => [
+                [
+                    'key' => 'ACCOUNT_TYPE',
+                    'equals' => 'individual',
+                    'required_keys' => ['EMAIL', 'API_TOKEN'],
+                    'required_changed_keys' => ['API_TOKEN'],
+                ],
+                [
+                    'key' => 'ACCOUNT_TYPE',
+                    'equals' => 'company',
+                    'required_keys' => ['CLIENT_ID', 'CLIENT_SECRET'],
+                    'required_changed_keys' => ['CLIENT_SECRET'],
+                ],
+            ],
+        ], \JSON_THROW_ON_ERROR));
+
+        [$status, $display] = $this->runCli(['command' => 'diff']);
+
+        self::assertSame(1, $status);
+        self::assertStringContainsString('+ CLIENT_ID', $display);
+        self::assertStringContainsString('! CLIENT_SECRET', $display);
+        self::assertStringNotContainsString('EMAIL', $display);
+        self::assertStringNotContainsString('API_TOKEN', $display);
+        self::assertStringNotContainsString('company', $display);
+        self::assertStringNotContainsString('replace-me', $display);
+    }
+
     public function testExplicitConfigurationResolvesPathsRelativeToItsDirectory(): void
     {
         self::assertTrue(mkdir('config'));
@@ -243,7 +277,7 @@ final class CliTest extends TestCase
         ]);
 
         self::assertSame(0, $status);
-        self::assertSame("Files contain the same keys.\n", $display);
+        self::assertSame("No differences found.\n", $display);
     }
 
     public function testInvalidConfigurationReturnsUsageError(): void
