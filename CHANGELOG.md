@@ -2,6 +2,23 @@
 
 All notable changes to this project will be documented here. The format follows Keep a Changelog, and the project intends to follow Semantic Versioning.
 
+## Release v1.3.0
+
+### Added
+
+- Tested PHP 8.6 support in CI and the local Docker QA matrix, while retaining PHP 8.2 as the minimum supported version.
+
+### Changed
+
+- Docker and Compose now default to PHP 8.6.
+- Updated locked development dependencies and raised the minimum PHP CS Fixer version to 3.95.32.
+- Explicitly allowed PHP CS Fixer to run on PHP 8.6 pending upstream support; automatic formatting on PHP 8.2 remains recommended.
+
+### Fixed
+
+- Installed the native `mbstring` extension in Docker development and QA images and declared it as a development requirement.
+- Removed a flaky configuration-error assertion caused by temporary file paths containing the tested value.
+
 ## Release v1.2.0
 
 ### Added

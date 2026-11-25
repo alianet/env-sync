@@ -4,7 +4,7 @@
 
 ## Installation
 
-The package requires PHP 8.2 or newer. Install it as a regular application dependency when it must remain available during production deployment:
+The package requires PHP 8.2 or newer. Release 1.3.0 adds tested support for PHP 8.6; the full quality suite runs on PHP 8.2, 8.3, 8.4, 8.5, and 8.6. Install it as a regular application dependency when it must remain available during production deployment:
 
 ```bash
 composer require alianet/env-sync
@@ -185,9 +185,11 @@ Release notes are maintained in [CHANGELOG.md](CHANGELOG.md).
 
 ## Docker
 
+PHP CS Fixer 3.95.32 officially supports PHP through 8.5. The shared fixer configuration explicitly allows running it on PHP 8.6 so the full QA suite still checks style on that version. This opt-in does not add upstream PHP 8.6 support; use PHP 8.2 for automatic formatting to preserve compatibility with the project's minimum PHP version.
+
 Docker is an optional development environment; local PHP and Composer are not required. It uses only the official PHP CLI image because this project is a library and console tool—there is no web server, PHP-FPM, database, or Redis.
 
-Start with the highest supported PHP version (8.5):
+Docker and Compose default to the highest tested PHP version (8.6):
 
 ```bash
 LOCAL_UID="$(id -u)" LOCAL_GID="$(id -g)" docker compose build php
@@ -196,6 +198,14 @@ docker compose run --rm php composer qa
 ```
 
 The UID and GID build arguments make files created through the bind mount belong to the local user. They default to `1000` when omitted. After changing either value, rebuild the image; if an existing dependency volume has incompatible ownership, stop the project and recreate only that version's `env-sync-vendor-*` volume.
+
+Keep `composer.json` and `composer.lock` in sync. After changing only platform requirements such as `ext-mbstring`, refresh the lock metadata without upgrading packages:
+
+```bash
+docker compose run --rm php composer update --lock --no-install --no-scripts
+```
+
+Commit both files together. A stale lock file causes `composer validate --strict` in the QA suite to fail on every PHP version.
 
 Individual checks remain available:
 
@@ -228,6 +238,7 @@ Use the matrix scripts for a fresh, isolated dependency installation and the sam
 | PHP 8.3 | `./tools/test-php-version 8.3` |
 | PHP 8.4 | `./tools/test-php-version 8.4` |
 | PHP 8.5 | `./tools/test-php-version 8.5` |
+| PHP 8.6 | `./tools/test-php-version 8.6` |
 
 To remove only this project's daily-use containers and networks, run `docker compose down`. If dependencies need a clean reinstall, remove only the selected version's volume (for example `docker volume rm env-sync-vendor-8.2`) after its containers have stopped. The matrix scripts remove only their own temporary images and do not prune Docker's global cache, images, or volumes.
 
