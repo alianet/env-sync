@@ -5,7 +5,7 @@ services:
       dockerfile: docker/php/Dockerfile
       target: development
       args:
-        PHP_VERSION: ${PHP_VERSION:-8.5}
+        PHP_VERSION: ${PHP_VERSION:-8.6}
         USER_ID: ${LOCAL_UID:-1000}
         GROUP_ID: ${LOCAL_GID:-1000}
     working_dir: /app
@@ -18,6 +18,6 @@ services:
 
 volumes:
   vendor:
-    name: env-sync-vendor-${PHP_VERSION:-8.5}
+    name: env-sync-vendor-${PHP_VERSION:-8.6}
   composer-cache:
     name: env-sync-composer-cache

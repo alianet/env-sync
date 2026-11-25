@@ -40,7 +40,7 @@ final class ConfigurationLoaderTest extends TestCase
 
     public function testRejectsInvalidConditionalRequirementWithoutDisplayingItsValue(): void
     {
-        $path = tempnam(sys_get_temp_dir(), 'env-sync-configuration-test-');
+        $path = tempnam(sys_get_temp_dir(), 'env-sync-42-configuration-test-');
         self::assertIsString($path);
 
         try {
@@ -50,8 +50,10 @@ final class ConfigurationLoaderTest extends TestCase
                 (new ConfigurationLoader())->load($path);
                 self::fail('Expected invalid conditional requirement to be rejected.');
             } catch (InvalidConfigurationException $exception) {
-                self::assertStringContainsString('ACCOUNT_TYPE', $exception->getMessage());
-                self::assertStringNotContainsString('42', $exception->getMessage());
+                self::assertSame(
+                    \sprintf('Conditional requirement for key "ACCOUNT_TYPE" in %s must contain a string "equals".', $path),
+                    $exception->getMessage(),
+                );
             }
         } finally {
             unlink($path);

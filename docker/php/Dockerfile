@@ -1,11 +1,12 @@
-ARG PHP_VERSION=8.5
+ARG PHP_VERSION=8.6
 
 FROM php:${PHP_VERSION}-cli AS base
 
 COPY --from=composer:2 /usr/bin/composer /usr/local/bin/composer
 
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends unzip \
+    && apt-get install -y --no-install-recommends libonig-dev unzip \
+    && docker-php-ext-install mbstring \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app

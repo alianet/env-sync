@@ -5,6 +5,7 @@ declare(strict_types=1);
 $finder = PhpCsFixer\Finder::create()->in([__DIR__ . '/src', __DIR__ . '/tests'])->append([__FILE__, __DIR__ . '/bin/env-sync']);
 
 return (new PhpCsFixer\Config())
+    ->setUnsupportedPhpVersionAllowed(\PHP_VERSION_ID >= 80600 && \PHP_VERSION_ID < 80700)
     ->setRiskyAllowed(true)
     ->setRules([
         '@Symfony' => true,
