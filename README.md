@@ -1,5 +1,7 @@
 # env-sync
 
+[![codecov](https://codecov.io/gh/alianet/env-sync/branch/main/graph/badge.svg)](https://app.codecov.io/gh/alianet/env-sync)
+
 `alianet/env-sync` is a framework-independent CLI that compares a local `.env` file with a versioned template and safely appends missing entries. It compares variable names and can verify that selected placeholder values were changed, without ever printing dotenv values.
 
 ## Installation
@@ -180,6 +182,10 @@ composer qa
 ```
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for project conventions.
+
+The CI `coverage` job generates Clover XML and HTML reports using PHPUnit with PCOV. Both reports are available in the `coverage-report` GitHub Actions artifact; Clover coverage is also uploaded to [Codecov](https://app.codecov.io/gh/alianet/env-sync).
+
+To enable uploads, activate `alianet/env-sync` in Codecov with access to the GitHub repository. The workflow authenticates using GitHub OIDC (`id-token: write` on the coverage job), so no `CODECOV_TOKEN` secret is needed. Upload failures fail the coverage job. See the [official Codecov OIDC setup](https://github.com/codecov/codecov-action#using-oidc).
 
 Release notes are maintained in [CHANGELOG.md](CHANGELOG.md).
 

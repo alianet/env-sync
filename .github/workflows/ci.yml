@@ -42,6 +42,9 @@ jobs:
 
   coverage:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
     steps:
       - uses: actions/checkout@v7
       - uses: shivammathur/setup-php@v2
@@ -63,6 +66,14 @@ jobs:
         with:
           name: coverage-report
           path: build/coverage
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v7
+        with:
+          use_oidc: true
+          files: build/coverage/clover.xml
+          disable_search: true
+          fail_ci_if_error: true
+          name: phpunit
 
   lowest-dependencies:
     runs-on: ubuntu-latest
