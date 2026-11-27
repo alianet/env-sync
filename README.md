@@ -1,6 +1,10 @@
 # env-sync
 
+[![CI](https://github.com/alianet/env-sync/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/alianet/env-sync/actions/workflows/ci.yml)
 [![codecov](https://codecov.io/gh/alianet/env-sync/branch/main/graph/badge.svg)](https://app.codecov.io/gh/alianet/env-sync)
+[![Latest stable version](https://img.shields.io/packagist/v/alianet/env-sync.svg)](https://packagist.org/packages/alianet/env-sync)
+[![PHP requirement](https://img.shields.io/packagist/dependency-v/alianet/env-sync/php.svg)](https://packagist.org/packages/alianet/env-sync)
+[![License](https://img.shields.io/packagist/l/alianet/env-sync.svg)](LICENSE)
 
 `alianet/env-sync` is a framework-independent CLI that compares a local `.env` file with a versioned template and safely appends missing entries. It compares variable names and can verify that selected placeholder values were changed, without ever printing dotenv values.
 
